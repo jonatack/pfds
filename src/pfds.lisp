@@ -224,5 +224,15 @@
 (defgeneric add (value sortable))
 (defgeneric _sort (sortable))
 
+(defclass bottom-up-mergesort ()
+  ((less :initarg :less)
+   (size :initform 0 :initarg :segments)
+   (segments :initform nil :initarg :segments)))
 
-
+(defun bum-merge (less xs ys)
+  (cond ((null xs) ys)
+        ((null ys) xs)
+        (T (let ((x (car xs)) (y (car ys)))
+             (if (funcall less x y)
+               (cons x (bum-merge less (cdr xs) ys))
+               (cons y (bum-merge less xs (cdr ys))))))))
