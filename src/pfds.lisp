@@ -11,8 +11,18 @@
     #:$
     #:force
     #:take
-    )
-  )
+    #:stream-to-list
+    #:make-stream
+    #:append-streams
+    #:drop
+    #:reverse-stream
+    #:empty-p
+    #:snoc
+    #:head
+    #:tail
+    #:batched-queue
+    #:bankers-queue
+    #:physicists-queue))
 (in-package :pfds)
 
 ;; Chapter 1
@@ -56,10 +66,10 @@
       (cons (car firstcell)
             (stream-to-list (cdr firstcell))))))
 
-(defmacro %stream (&body body)
+(defmacro make-stream (&body body)
   (if (null body)
     '($ nil)
-    `($ (cons ,(car body) (%stream ,@(cdr body))))))
+    `($ (cons ,(car body) (make-stream ,@(cdr body))))))
 
 ;; ++ (monolithic)
 (defun append-suspended-lists (suslist1 suslist2)
@@ -138,9 +148,9 @@
 ;; Section 3.4.2 BankersQueue
 
 (defclass bankers-queue ()
-  ((front :initform (%stream) :initarg :front)
+  ((front :initform (make-stream) :initarg :front)
    (front-length :initform 0 :initarg :front-length)
-   (rear :initform (%stream) :initarg :rear)
+   (rear :initform (make-stream) :initarg :rear)
    (rear-length :initform 0 :initarg :rear-length)))
 
 (defgeneric queue-length (queue))
