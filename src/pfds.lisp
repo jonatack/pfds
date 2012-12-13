@@ -209,10 +209,13 @@
                    :front-length front-length
                    :rear rear
                    :rear-length rear-length)
-    (let ((new-working (force front)))
+    (let* ((new-working (force front))
+           (new-front ($ (append new-working (reverse rear)))))
       (make-instance 'physicists-queue
-                     :working new-working
-                     :front ($ (append new-working (reverse rear)))
+                     :working (if (null new-working)
+                                (force new-front)
+                                new-working)
+                     :front new-front
                      :front-length (+ front-length rear-length)))))
 
 (defmethod empty-p ((queue physicists-queue))
@@ -232,7 +235,7 @@
   (when (empty-p queue)
     (error "Called HEAD on empty physicists-queue"))
   (with-slots (working front front-length rear rear-length) queue
-    (construct-physicists-queue working ($ (cdr (force front)))
+    (construct-physicists-queue (cdr working) ($ (cdr (force front)))
                                 (1- front-length) rear rear-length)))
 
 ;; Sortable interface
@@ -254,22 +257,22 @@
                (cons x (bum-merge less (cdr xs) ys))
                (cons y (bum-merge less xs (cdr ys))))))))
 
-(defmethod add (value (sortable bottom-up-mergesort))
-  (with-slots (less size segments) sortable
-    (labels ((add-seg (seg segs size)
-              (if (= 0 (mod size 2))
-                (cons seg segs)
-                (add-seg (bum-merge less seg (car segs))
-                          (cdr segs) (truncate size 2)))))
-      (make-instance 'bottom-up-mergesort
-                     :less less
-                     :size (1+ size)
-                     :segments ($ add-seg (list value) (force segs) size)))))
+;(defmethod add (value (sortable bottom-up-mergesort))
+  ;(with-slots (less size segments) sortable
+    ;(labels ((add-seg (seg segs size)
+              ;(if (= 0 (mod size 2))
+                ;(cons seg segs)
+                ;(add-seg (bum-merge less seg (car segs))
+                          ;(cdr segs) (truncate size 2)))))
+      ;(make-instance 'bottom-up-mergesort
+                     ;:less less
+                     ;:size (1+ size)
+                     ;:segments ($ add-seg (list value) (force segs) size)))))
 
-(defmethod _sort ((sortable bottom-up-mergesort))
-  (with-slots (less segs) sortable
-   (labels ((merge-all (xs segs)
-             (if (null segs)
-               xs
-               (merge-all (bum-merge less xs (car seg)) (cdr segs)))))
-     (merge-all nil (force segs)))))
+;(defmethod _sort ((sortable bottom-up-mergesort))
+  ;(with-slots (less segs) sortable
+   ;(labels ((merge-all (xs segs)
+             ;(if (null segs)
+               ;xs
+               ;(merge-all (bum-merge less xs (car seg)) (cdr segs)))))
+     ;(merge-all nil (force segs)))))

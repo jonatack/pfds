@@ -48,12 +48,25 @@
   (is (stream-to-list strm2) (list 3 4))
   (is foo 4))
 
-;; reverse
+;; reverse-stream
 (let* ((foo 0)
        (strm1 (make-stream (incf foo) (incf foo) (incf foo) (incf foo)))
        (strm2 (reverse-stream strm1)))
   (is foo 0)
   (is (stream-to-list strm2) (list 4 3 2 1))
   (is foo 4))
+
+(let ((queue-classes '(batched-queue bankers-queue physicists-queue)))
+  (mapc (lambda (queue-class)
+          (let ((q (make-instance queue-class)))
+            (is (empty-p q) T (format nil "Test0 for ~a" queue-class))
+            (let ((q (snoc (snoc q 1) 2)))
+              (is (head q) 1 (format nil "Test1 for ~a" queue-class))
+              (is (head (tail q)) 2 (format nil "Test2 for ~a" queue-class))))
+          (let ((q (make-instance queue-class)))
+            (dotimes (x 100) (setq q (snoc q x)))
+            (dotimes (x 75) (setq q (tail q)))
+            (is (head q) 75 (format nil "Test3 for ~a" queue-class))))
+        queue-classes))
 
 (finalize)
