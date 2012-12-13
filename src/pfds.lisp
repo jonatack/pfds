@@ -5,7 +5,14 @@
 
 (in-package :cl-user)
 (defpackage pfds
-  (:use :cl))
+  (:use :cl)
+  (:export
+    #:suspension
+    #:$
+    #:force
+    #:take
+    )
+  )
 (in-package :pfds)
 
 ;; Chapter 1
@@ -49,10 +56,10 @@
       (cons (car firstcell)
             (stream-to-list (cdr firstcell))))))
 
-(defmacro stream (&body body)
+(defmacro %stream (&body body)
   (if (null body)
     '($ nil)
-    `($ (cons ,(car body) (stream ,@(cdr body))))))
+    `($ (cons ,(car body) (%stream ,@(cdr body))))))
 
 ;; ++ (monolithic)
 (defun append-suspended-lists (suslist1 suslist2)
@@ -131,9 +138,9 @@
 ;; Section 3.4.2 BankersQueue
 
 (defclass bankers-queue ()
-  ((front :initform (stream) :initarg :front)
+  ((front :initform (%stream) :initarg :front)
    (front-length :initform 0 :initarg :front-length)
-   (rear :initform (stream) :initarg :rear)
+   (rear :initform (%stream) :initarg :rear)
    (rear-length :initform 0 :initarg :rear-length)))
 
 (defgeneric queue-length (queue))
@@ -236,3 +243,23 @@
              (if (funcall less x y)
                (cons x (bum-merge less (cdr xs) ys))
                (cons y (bum-merge less xs (cdr ys))))))))
+
+(defmethod add (value (sortable bottom-up-mergesort))
+  (with-slots (less size segments) sortable
+    (labels ((add-seg (seg segs size)
+              (if (= 0 (mod size 2))
+                (cons seg segs)
+                (add-seg (bum-merge less seg (car segs))
+                          (cdr segs) (truncate size 2)))))
+      (make-instance 'bottom-up-mergesort
+                     :less less
+                     :size (1+ size)
+                     :segments ($ add-seg (list value) (force segs) size)))))
+
+(defmethod _sort ((sortable bottom-up-mergesort))
+  (with-slots (less segs) sortable
+   (labels ((merge-all (xs segs)
+             (if (null segs)
+               xs
+               (merge-all (bum-merge less xs (car seg)) (cdr segs)))))
+     (merge-all nil (force segs)))))

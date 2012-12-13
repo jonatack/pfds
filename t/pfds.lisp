@@ -12,6 +12,13 @@
 
 (plan nil)
 
-;; blah blah blah.
+;; side effects of a suspension only occur once
+(let* ((foo 0)
+       (susp ($ (incf foo))))
+  (is foo 0)
+  (is (force susp) 1)
+  (is foo 1)
+  (is (force susp) 1)
+  (is foo 1))
 
 (finalize)
