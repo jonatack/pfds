@@ -5,7 +5,7 @@
 
 (in-package :cl-user)
 (defpackage pfds
-  (:use :cl)
+  (:use :cl :alexandria)
   (:export
     #:suspension
     #:$
@@ -23,7 +23,11 @@
     #:batched-queue
     #:bankers-queue
     #:physicists-queue
-    #:bottom-up-merge))
+    #:bottom-up-merge
+    #:bottom-up-mergesort
+    #:add
+    #:mergesort
+    #:mergesort-alt))
 (in-package :pfds)
 
 ;; Chapter 1
@@ -240,15 +244,19 @@
                                 (1- front-length) rear rear-length)))
 
 ;; Sortable interface
+;; instead of implementing "new" interface, let make-instance handle that
+;; with initarg :less
+;;
+;; This interface is missing any method for retrieving values
 
-(defgeneric new (class less)) ;; eg. (new 'some-class #'<)
 (defgeneric add (value sortable))
-(defgeneric _sort (sortable))
+(defgeneric mergesort (sortable))
+(defgeneric mergesort-alt (sortable))
 
 (defclass bottom-up-mergesort ()
   ((less :initarg :less)
-   (size :initform 0 :initarg :segments)
-   (segments :initform nil :initarg :segments)))
+   (size :initform 0 :initarg :size)
+   (segments :initform ($ nil) :initarg :segments)))
 
 (defun bottom-up-merge (less xs ys)
   (cond ((null xs) ys)
@@ -270,10 +278,18 @@
                      :size (1+ size)
                      :segments ($ (add-seg (list value) (force segments) size))))))
 
-(defmethod _sort ((sortable bottom-up-mergesort))
-  (with-slots (less segs) sortable
+(defmethod mergesort ((sortable bottom-up-mergesort))
+  (with-slots (less segments) sortable
    (labels ((merge-all (xs segs)
              (if (null segs)
                xs
                (merge-all (bottom-up-merge less xs (car segs)) (cdr segs)))))
-     (merge-all nil (force segs)))))
+     (merge-all nil (force segments)))))
+
+(defun foldl (function value list)
+  (if list (foldl function (funcall function value (car list)) (cdr list)) value))
+
+(defmethod mergesort-alt ((sortable bottom-up-mergesort))
+  (with-slots (less segments) sortable
+    (foldl (curry #'bottom-up-merge less) nil (force segments))))
+

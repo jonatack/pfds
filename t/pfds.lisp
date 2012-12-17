@@ -76,7 +76,18 @@
 (is (bottom-up-merge #'< '(1 3 5) '(2 4 6)) '(1 2 3 4 5 6))
 (is (bottom-up-merge #'< '(1 1 5) '(2 4 6 7)) '(1 1 2 4 5 6 7))
 
-;; add
+(let ((coll (make-instance 'bottom-up-mergesort :less #'<)))
+  (setq coll (add 2 coll))
+  (setq coll (add 3 coll))
+  (setq coll (add 1 coll))
+  (setq coll (add 4 coll))
+  (is (mergesort coll) (list 1 2 3 4)))
 
+(let ((coll (make-instance 'bottom-up-mergesort :less #'<)))
+  (setq coll (add 2 coll))
+  (setq coll (add 3 coll))
+  (setq coll (add 1 coll))
+  (setq coll (add 4 coll))
+  (is (mergesort-alt coll) (list 1 2 3 4)))
 
 (finalize)

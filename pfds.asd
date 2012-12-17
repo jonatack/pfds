@@ -16,7 +16,7 @@
   :version "0.1"
   :author "Stephen A. Goss"
   :license "Modified BSD"
-  :depends-on ()
+  :depends-on (:alexandria)
   :components ((:module "src"
                 :components
                 ((:file "pfds"))))
