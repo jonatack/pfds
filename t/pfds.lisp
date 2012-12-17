@@ -56,6 +56,7 @@
   (is (stream-to-list strm2) (list 4 3 2 1))
   (is foo 4))
 
+;; test various queue implementations
 (let ((queue-classes '(batched-queue bankers-queue physicists-queue)))
   (mapc (lambda (queue-class)
           (let ((q (make-instance queue-class)))
@@ -68,5 +69,14 @@
             (dotimes (x 75) (setq q (tail q)))
             (is (head q) 75 (format nil "Test3 for ~a" queue-class))))
         queue-classes))
+
+;; Sortable
+
+;; bottom-up-merge test
+(is (bottom-up-merge #'< '(1 3 5) '(2 4 6)) '(1 2 3 4 5 6))
+(is (bottom-up-merge #'< '(1 1 5) '(2 4 6 7)) '(1 1 2 4 5 6 7))
+
+;; add
+
 
 (finalize)

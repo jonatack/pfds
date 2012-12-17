@@ -22,7 +22,8 @@
     #:tail
     #:batched-queue
     #:bankers-queue
-    #:physicists-queue))
+    #:physicists-queue
+    #:bottom-up-merge))
 (in-package :pfds)
 
 ;; Chapter 1
@@ -249,30 +250,30 @@
    (size :initform 0 :initarg :segments)
    (segments :initform nil :initarg :segments)))
 
-(defun bum-merge (less xs ys)
+(defun bottom-up-merge (less xs ys)
   (cond ((null xs) ys)
         ((null ys) xs)
         (T (let ((x (car xs)) (y (car ys)))
              (if (funcall less x y)
-               (cons x (bum-merge less (cdr xs) ys))
-               (cons y (bum-merge less xs (cdr ys))))))))
+               (cons x (bottom-up-merge less (cdr xs) ys))
+               (cons y (bottom-up-merge less xs (cdr ys))))))))
 
-;(defmethod add (value (sortable bottom-up-mergesort))
-  ;(with-slots (less size segments) sortable
-    ;(labels ((add-seg (seg segs size)
-              ;(if (= 0 (mod size 2))
-                ;(cons seg segs)
-                ;(add-seg (bum-merge less seg (car segs))
-                          ;(cdr segs) (truncate size 2)))))
-      ;(make-instance 'bottom-up-mergesort
-                     ;:less less
-                     ;:size (1+ size)
-                     ;:segments ($ add-seg (list value) (force segs) size)))))
+(defmethod add (value (sortable bottom-up-mergesort))
+  (with-slots (less size segments) sortable
+    (labels ((add-seg (seg segs size)
+              (if (= 0 (mod size 2))
+                (cons seg segs)
+                (add-seg (bottom-up-merge less seg (car segs))
+                          (cdr segs) (truncate size 2)))))
+      (make-instance 'bottom-up-mergesort
+                     :less less
+                     :size (1+ size)
+                     :segments ($ (add-seg (list value) (force segments) size))))))
 
-;(defmethod _sort ((sortable bottom-up-mergesort))
-  ;(with-slots (less segs) sortable
-   ;(labels ((merge-all (xs segs)
-             ;(if (null segs)
-               ;xs
-               ;(merge-all (bum-merge less xs (car seg)) (cdr segs)))))
-     ;(merge-all nil (force segs)))))
+(defmethod _sort ((sortable bottom-up-mergesort))
+  (with-slots (less segs) sortable
+   (labels ((merge-all (xs segs)
+             (if (null segs)
+               xs
+               (merge-all (bottom-up-merge less xs (car segs)) (cdr segs)))))
+     (merge-all nil (force segs)))))
